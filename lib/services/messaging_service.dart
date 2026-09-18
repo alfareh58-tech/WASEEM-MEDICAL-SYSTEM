@@ -16,7 +16,6 @@ class MessagingService {
       p = p.substring(2);
     }
 
-    // 777123456 -> 967777123456
     if (p.startsWith('7') && p.length == 9) {
       p = '967$p';
     }
@@ -25,7 +24,43 @@ class MessagingService {
   }
 
   // ============================================================
-  // فتح WhatsApp العادي وتجهيز الرسالة
+  // المخاطبة حسب جنس المريض
+  // ============================================================
+
+  static String recipient({
+    required String patient,
+    String gender = '',
+  }) {
+    final name = patient.trim();
+    final g = gender.trim();
+
+    if (g == 'ذكر' || g.toLowerCase() == 'male') {
+      return 'الأخ $name';
+    }
+
+    if (g == 'أنثى' ||
+        g == 'انثى' ||
+        g.toLowerCase() == 'female') {
+      return 'الأخت $name';
+    }
+
+    return 'المراجع $name';
+  }
+
+  // ============================================================
+  // تنظيف البيانات
+  // ============================================================
+
+  static String value(
+    String? text, {
+    String fallback = '-',
+  }) {
+    final result = (text ?? '').trim();
+    return result.isEmpty ? fallback : result;
+  }
+
+  // ============================================================
+  // فتح WhatsApp العادي
   // ============================================================
 
   static Future<bool> whatsapp(
@@ -53,7 +88,7 @@ class MessagingService {
   }
 
   // ============================================================
-  // فتح SMS وتجهيز الرسالة
+  // فتح SMS
   // ============================================================
 
   static Future<bool> sms(
@@ -85,7 +120,7 @@ class MessagingService {
   }
 
   // ============================================================
-  // إشعار تسجيل مريض جديد
+  // رسالة تسجيل مريض
   // ============================================================
 
   static String registrationMessage({
@@ -95,34 +130,39 @@ class MessagingService {
     required String service,
     required String date,
     required String support,
+    String gender = '',
   }) {
-    final supportText = support.trim().isEmpty
+    final person = recipient(
+      patient: patient,
+      gender: gender,
+    );
+
+    final contact = support.trim().isEmpty
         ? ''
-        : '\nللاستفسار والتواصل:\n$support';
+        : '\nللتواصل والاستفسار:\n$support';
 
     return '''
-السلام عليكم ورحمة الله وبركاته 🌷
+السلام عليكم ورحمة الله وبركاته
 
-الأستاذ/ة: $patient
+$person،
 
-تم تسجيل بياناتكم بنجاح في:
-$center
+نرحب بكم في $center، ونفيدكم بأنه تم تسجيل بياناتكم بنجاح.
 
+بيانات التسجيل:
 ━━━━━━━━━━━━━━━━
-رقم الملف الطبي: $fileNo
-القسم / الخدمة: $service
-تاريخ التسجيل: $date
+رقم الملف الطبي: ${value(fileNo)}
+الخدمة: ${value(service)}
+تاريخ التسجيل: ${value(date)}
 ━━━━━━━━━━━━━━━━
 
-مع تمنياتنا لكم بدوام الصحة والعافية.
+نشكركم على ثقتكم بنا، ونتمنى لكم دوام الصحة والعافية.
 
-$center
-$supportText
+$center$contact
 ''';
   }
 
   // ============================================================
-  // إشعار سند قبض
+  // رسالة سند قبض
   // ============================================================
 
   static String receiptMessage({
@@ -133,42 +173,46 @@ $supportText
     required String center,
     required String date,
     String support = '',
+    String gender = '',
   }) {
-    final supportText = support.trim().isEmpty
+    final person = recipient(
+      patient: patient,
+      gender: gender,
+    );
+
+    final contact = support.trim().isEmpty
         ? ''
-        : '\nللاستفسار والتواصل:\n$support';
+        : '\nللتواصل والاستفسار:\n$support';
 
     return '''
-السلام عليكم ورحمة الله وبركاته 🌷
+السلام عليكم ورحمة الله وبركاته
 
-إشعار قبض مالي
+$person،
 
-الأستاذ/ة: $patient
+نفيدكم بأنه تم تسجيل سند القبض الخاص بكم لدى $center بنجاح.
 
-تم تسجيل سند قبض مالي بنجاح لدى:
-$center
-
+تفاصيل السند:
 ━━━━━━━━━━━━━━━━
-رقم السند: $receiptNo
-المبلغ: $amount
-البيان: ${description.trim().isEmpty ? 'سند قبض' : description}
-التاريخ: $date
+رقم السند: ${value(receiptNo)}
+المبلغ: ${value(amount)}
+البيان: ${value(description, fallback: 'سند قبض')}
+التاريخ: ${value(date)}
 ━━━━━━━━━━━━━━━━
 
-نشكر لكم تعاملكم معنا،
-ونتمنى لكم دوام الصحة والعافية.
+تم حفظ العملية في السجل المالي.
 
-$center
-$supportText
+شكرًا لتعاملكم معنا، ونتمنى لكم دوام الصحة والعافية.
+
+$center$contact
 ''';
   }
 
   // ============================================================
-  // إشعار سند صرف
+  // رسالة سند صرف
   // ============================================================
 
   static String expenseMessage({
-    required String recipient,
+    required String recipientName,
     required String expenseNo,
     required String amount,
     required String category,
@@ -176,22 +220,24 @@ $supportText
     required String center,
     required String date,
   }) {
+    final person = recipientName.trim().isEmpty
+        ? ''
+        : '\nالمستفيد: $recipientName\n';
+
     return '''
 السلام عليكم ورحمة الله وبركاته
 
-إشعار سند صرف
+إشعار سند صرف مالي
 
-${recipient.trim().isEmpty ? '' : 'المستفيد: $recipient'}
-
-تم تسجيل سند صرف مالي لدى:
-$center
-
+تم تسجيل سند الصرف التالي لدى $center بنجاح.
+$person
+تفاصيل السند:
 ━━━━━━━━━━━━━━━━
-رقم السند: $expenseNo
-المبلغ: $amount
-الحساب: $category
-البيان: ${description.trim().isEmpty ? 'سند صرف' : description}
-التاريخ: $date
+رقم السند: ${value(expenseNo)}
+المبلغ: ${value(amount)}
+الحساب: ${value(category)}
+البيان: ${value(description, fallback: 'سند صرف')}
+التاريخ: ${value(date)}
 ━━━━━━━━━━━━━━━━
 
 $center
@@ -199,7 +245,7 @@ $center
   }
 
   // ============================================================
-  // إشعار تسجيل جلسة من الباقة
+  // رسالة تسجيل جلسة
   // ============================================================
 
   static String sessionUsageMessage({
@@ -209,35 +255,38 @@ $center
     required String remainingSessions,
     required String packageName,
     required String date,
+    String gender = '',
   }) {
+    final person = recipient(
+      patient: patient,
+      gender: gender,
+    );
+
     return '''
-السلام عليكم ورحمة الله وبركاته 🌷
+السلام عليكم ورحمة الله وبركاته
 
-الأستاذ/ة: $patient
+$person،
 
-إشعار جلسات
+نفيدكم بأنه تم تسجيل جلسة علاجية لكم لدى $center.
 
-تم تسجيل جلسة علاجية لكم لدى:
-$center
-
+تفاصيل الباقة:
 ━━━━━━━━━━━━━━━━
-الباقة: $packageName
-عدد الجلسات المستخدمة: $usedSessions
-الجلسات المتبقية: $remainingSessions
-التاريخ: $date
+اسم الباقة: ${value(packageName)}
+الجلسات المستخدمة: ${value(usedSessions)}
+الجلسات المتبقية: ${value(remainingSessions)}
+تاريخ الجلسة: ${value(date)}
 ━━━━━━━━━━━━━━━━
 
 تم تحديث رصيد الجلسات في ملفكم الطبي.
 
-نشكركم على ثقتكم بنا،
-ونتمنى لكم دوام الصحة والعافية.
+مع تمنياتنا لكم بدوام الصحة والعافية.
 
 $center
 ''';
   }
 
   // ============================================================
-  // إشعار قرب انتهاء الباقة
+  // رسالة قرب انتهاء الباقة
   // ============================================================
 
   static String packageLowMessage({
@@ -246,24 +295,66 @@ $center
     required String packageName,
     required String remainingSessions,
     required String date,
+    String gender = '',
   }) {
+    final person = recipient(
+      patient: patient,
+      gender: gender,
+    );
+
     return '''
-السلام عليكم ورحمة الله وبركاته 🌷
+السلام عليكم ورحمة الله وبركاته
 
-تنبيه بخصوص باقة الجلسات
+$person،
 
-الأستاذ/ة: $patient
+نود تنبيهكم إلى انخفاض عدد الجلسات المتبقية في باقتكم لدى $center.
 
-نفيدكم بأن باقة الجلسات الخاصة بكم لدى:
+تفاصيل الباقة:
+━━━━━━━━━━━━━━━━
+اسم الباقة: ${value(packageName)}
+الجلسات المتبقية: ${value(remainingSessions)}
+التاريخ: ${value(date)}
+━━━━━━━━━━━━━━━━
+
+يمكنكم التواصل مع المركز عند الحاجة إلى تجديد الباقة.
+
+مع تمنياتنا لكم بدوام الصحة والعافية.
+
 $center
+''';
+  }
 
+  // ============================================================
+  // رسالة انتهاء الباقة
+  // ============================================================
+
+  static String packageFinishedMessage({
+    required String patient,
+    required String center,
+    required String packageName,
+    required String date,
+    String gender = '',
+  }) {
+    final person = recipient(
+      patient: patient,
+      gender: gender,
+    );
+
+    return '''
+السلام عليكم ورحمة الله وبركاته
+
+$person،
+
+نفيدكم بأن جميع جلسات باقة العلاج الخاصة بكم لدى $center قد تم استخدامها.
+
+تفاصيل الباقة:
 ━━━━━━━━━━━━━━━━
-الباقة: $packageName
-الجلسات المتبقية: $remainingSessions
-التاريخ: $date
+اسم الباقة: ${value(packageName)}
+الجلسات المتبقية: 0
+التاريخ: ${value(date)}
 ━━━━━━━━━━━━━━━━
 
-نرجو التواصل مع المركز عند الحاجة إلى تجديد الباقة.
+للاستفسار عن الباقات المتاحة أو التجديد، يرجى التواصل مع المركز.
 
 مع تمنياتنا لكم بدوام الصحة والعافية.
 
@@ -282,35 +373,40 @@ $center
     required String time,
     required String doctor,
     required String support,
+    String gender = '',
   }) {
+    final person = recipient(
+      patient: patient,
+      gender: gender,
+    );
+
     final doctorText = doctor.trim().isEmpty
         ? ''
         : '\nالطبيب / الأخصائي: $doctor';
 
-    final supportText = support.trim().isEmpty
+    final contact = support.trim().isEmpty
         ? ''
-        : '\nللاستفسار والتواصل:\n$support';
+        : '\nللتواصل والاستفسار:\n$support';
 
     return '''
-السلام عليكم ورحمة الله وبركاته 🌷
+السلام عليكم ورحمة الله وبركاته
 
-الأستاذ/ة: $patient
+$person،
 
-نذكّركم بموعدكم لدى:
-$center
+نذكّركم بموعدكم لدى $center.
 
+تفاصيل الموعد:
 ━━━━━━━━━━━━━━━━
-التاريخ: $date
-الوقت: $time
+التاريخ: ${value(date)}
+الوقت: ${value(time)}
 $doctorText
 ━━━━━━━━━━━━━━━━
 
-نرجو الحضور في الموعد المحدد.
+نرجو الالتزام بالموعد المحدد والحضور في الوقت المناسب.
 
 مع تمنياتنا لكم بالصحة والعافية.
 
-$center
-$supportText
+$center$contact
 ''';
   }
 }
