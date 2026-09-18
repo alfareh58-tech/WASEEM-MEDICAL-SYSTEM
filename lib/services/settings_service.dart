@@ -2,30 +2,72 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
   SettingsService._();
-  static final instance = SettingsService._();
+
+  static final SettingsService instance = SettingsService._();
+
+  // ============================================================
+  // الوضع الليلي
+  // ============================================================
 
   Future<bool> isDarkMode() async {
-    final p = await SharedPreferences.getInstance();
-    return p.getBool('dark_mode') ?? false;
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getBool('dark_mode') ?? false;
   }
 
   Future<void> setDarkMode(bool value) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setBool('dark_mode', value);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('dark_mode', value);
   }
 
+  // ============================================================
+  // اسم المركز
+  // ============================================================
+
   Future<String> centerName() async {
-    final p = await SharedPreferences.getInstance();
-    return p.getString('center_name') ?? 'المركز الأول للعلاج الطبيعي والتأهيل - دمت';
+    final preferences = await SharedPreferences.getInstance();
+
+    return preferences.getString('center_name') ??
+        'المركز الأول للعلاج الطبيعي والتأهيل - دمت';
   }
 
   Future<void> setCenterName(String value) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setString('center_name', value);
+    final preferences = await SharedPreferences.getInstance();
+
+    await preferences.setString(
+      'center_name',
+      value.trim(),
+    );
   }
 
+  // ============================================================
+  // رقم التواصل
+  // ============================================================
+
   Future<String> supportPhone() async {
-    final p = await SharedPreferences.getInstance();
-    return p.getString('support_phone') ?? '774486588';
+    final preferences = await SharedPreferences.getInstance();
+
+    return preferences.getString('support_phone') ??
+        '774486588';
+  }
+
+  Future<void> setSupportPhone(String value) async {
+    final preferences = await SharedPreferences.getInstance();
+
+    await preferences.setString(
+      'support_phone',
+      value.trim(),
+    );
+  }
+
+  // ============================================================
+  // مسح الإعدادات
+  // ============================================================
+
+  Future<void> clearSettings() async {
+    final preferences = await SharedPreferences.getInstance();
+
+    await preferences.remove('dark_mode');
+    await preferences.remove('center_name');
+    await preferences.remove('support_phone');
   }
 }
