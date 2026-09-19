@@ -11,7 +11,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # أيقونات iOS
   cupertino_icons: ^1.0.8
 
   # قاعدة البيانات
@@ -25,7 +24,7 @@ dependencies:
   # فتح الروابط وواتساب العادي
   url_launcher: ^6.3.1
 
-  # إنشاء ملفات PDF
+  # إنشاء PDF
   pdf: ^3.11.3
 
   # الطباعة ومشاركة PDF
